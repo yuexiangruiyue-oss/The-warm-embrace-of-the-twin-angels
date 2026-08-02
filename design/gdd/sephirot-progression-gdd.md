@@ -149,6 +149,8 @@ enum SephirotState:
 
 #### 2.2.2 选择标签系统（Confrontation Tag）
 
+**【架构对齐回写】与主架构 §5.3 统一选项数据结构对齐**
+
 在④CHOICE节拍，每个选择选项被标记为以下三种类型之一：
 
 ```
@@ -157,6 +159,17 @@ enum ConfrontationTag:
     ESCAPE   — 逃避选项：回避或转移情感主题的选择
     NEUTRAL  — 中性选项：不直接面对也不逃避（如"问天使"）
 ```
+
+**`confrontation_tag` 与 `progress_value` 的映射关系**（被 C4 消费）：
+
+| confrontation_tag | progress_value | C4 处理逻辑 |
+|---|---|---|
+| `ENGAGE` | 1.0 | 进度 +1.0 → COMPLETED_FULL → 解锁下一质点 |
+| `ESCAPE` | 0.3 | 进度 +0.3 → 逃避计数 +1 → 第3次 ESCAPE → 天使代为面对 → COMPLETED_HALF |
+| `NEUTRAL` | 0.0 | 进度 +0.0 → 天使提供视角 → 重新选择（不增加逃避计数） |
+| `null`（非直面选择） | 由 `texture_tag` 独立决定 | 仅累加 progress_value，不影响逃避计数 |
+
+**消费关系**：`confrontation_tag` 被 C4 消费（驱动完成判定和逃避计数）；`progress_value` 被 C4 消费（进度更新）。两者存在语义冗余但有意保留——`confrontation_tag` 驱动 C4 逻辑，`progress_value` 作为通用进度值，非直面选择时两者解耦。
 
 **标记规则**（供叙事设计者标注）：
 
@@ -1119,6 +1132,12 @@ Ch 13的特殊暗流处理：
 
 ### 7.4 Phase 3 (Ch 14-15) 的完成条件
 
+**【架构对齐回写】Phase 3 特殊处理确认（与主架构 §5.3 对齐）**
+
+Phase 3 特殊处理规则：
+- **Ch 14-15**：无 ESCAPE 选项——在真相揭示面前，逃避不再是一个选项。所有选项为 ENGAGE 或 NEUTRAL。
+- **Ch 16**：三选项全为 ENGAGE——最终选择不受存在保护，不受质点完成判定逻辑约束。三个结局都是"好的"。
+
 Ch 14-15是真相揭示章节，没有传统的ENGAGE/ESCAPE/NEUTRAL选择。完成条件有特殊处理：
 
 #### Ch 14（智慧/忆爱）——记忆回归
@@ -1330,6 +1349,43 @@ Ch 16 特殊处理:
 > 待对齐项：
 > 1. 生命之树16质点布局图（与美术对齐）
 > 2. 50%亮度的具体视觉规格（与美术对齐）
-> 3. confrontation_tag字段与选择系统GDD的集成（与design-strategist对齐）
-> 4. wing_brightness与天使陪伴系统GDD的集成（与design-strategist对齐）
+> 3. 【架构对齐回写】confrontation_tag 字段与 C3 选择系统 GDD 已对齐（主架构 §5.3）
+> 4. 【架构对齐回写】wing_brightness 与 C2/C5 GDD 已通过 ADR-004 双层模型对齐
 > 5. 暗流触发/解除与存在保护机制GDD的集成（本GDD的姊妹文档）
+
+---
+
+## 架构对齐记录
+
+> **回写日期**：2025-07-30
+> **回写人**：文策渊（design-strategist）
+> **对齐依据**：`docs/architecture/main-architecture.md` §5.3 统一选项数据结构
+
+### 回写内容
+
+本次回写确认 C4 质点进程系统 GDD 的 `confrontation_tag` 消费逻辑与主架构文档 §5.3 对齐，并明确 Phase 3 特殊处理。
+
+#### 修改的章节
+
+| 章节 | 修改内容 |
+|------|---------|
+| §2.2.2 选择标签系统 | 新增 `confrontation_tag` 与 `progress_value` 的映射关系表，明确 C4 消费逻辑（ENGAGE→1.0→COMPLETED_FULL, ESCAPE→0.3→逃避计数, NEUTRAL→0.0→重新选择） |
+| §7.4 Phase 3 完成条件 | 新增 Phase 3 特殊处理确认：Ch14-15 无 ESCAPE 选项，Ch16 三选项全为 ENGAGE |
+
+#### 确认的核心逻辑
+
+1. **confrontation_tag 消费**：
+   - ENGAGE：进度 +1.0 → COMPLETED_FULL → 解锁下一质点
+   - ESCAPE：进度 +0.3 → 逃避计数 +1 → 第3次 ESCAPE → 天使代为面对 → COMPLETED_HALF
+   - NEUTRAL：进度 +0.0 → 天使提供视角 → 重新选择
+2. **Phase 3 特殊处理**：
+   - Ch 14-15：无 ESCAPE 选项（真相揭示面前逃避不再可能）
+   - Ch 16：三选项全为 ENGAGE（最终选择不受质点完成判定约束）
+
+#### 未修改的部分
+
+- 16质点双八度结构（§2.1）保持不变
+- 五拍叙事结构（§2.2.1）保持不变
+- 完成判定伪代码（§2.2.3）保持不变——逻辑已与架构一致
+- 卡住与突破机制（§2.4）保持不变
+- 所有叙事内容保持不变

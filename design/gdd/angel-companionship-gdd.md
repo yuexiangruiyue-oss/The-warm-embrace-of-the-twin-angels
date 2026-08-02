@@ -141,12 +141,19 @@ Phase 3 (Ch 15-16) ──── Stage 5: 终辉 (Final Light)
 
 #### 2.4.3 阶段转换规则
 
-**阶段基线由章节决定，不由单次互动决定。**
+**【架构对齐回写】阶段基线 + 双层亮度模型（ADR-004）**
 
-- 阶段转换只在**章节入口**发生（加载新章时设置`wing_stage`基线值）。
-- 章节内，每次天使介入（C5存在保护调用）会造成**临时黯淡**——翅膀亮度在介入瞬间下降，然后在场景结束后恢复到当前阶段的基线亮度。
+阶段基线由章节决定，不由单次互动决定。翅膀亮度采用 ADR-004 定义的双层模型：
+
+- **永久层** `wing_brightness_permanent`：阶段基线初始化，C5 存在保护代价永久扣减（在阶段内），阶段切换时重置为新基线。
+- **临时层** `wing_brightness_temporary`：场景内临时暗淡效果（高强度暗流的即时视觉反馈），场景结束后恢复为 0。
+- **显示亮度**（计算属性）：`wing_brightness_displayed = max(动态下限, wing_brightness_permanent - wing_brightness_temporary)`
+- **动态下限**：`max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[stage] × 0.15)`，确保翅膀不会因过度扣减而完全消失。
+
+- 阶段转换只在**章节入口**发生（加载新章时设置 `wing_stage` 基线值），此时 `wing_brightness_permanent` 重置为新阶段基线，`wing_brightness_temporary` 清零。
+- 章节内，每次天使介入（C5存在保护调用）会造成**永久黯淡**——C5 代价从 `wing_brightness_permanent` 扣减。高强度暗流（7-10）额外施加临时暗淡到 `wing_brightness_temporary`，场景结束后恢复。
 - 临时黯淡的程度：Stage 1-2 → 介入后亮度降10%（几乎不可见）；Stage 3 → 降20%（可见闪烁）；Stage 4 → 降30%（明显消耗感）。
-- *为什么这样设计*：概念文档说"每次拉回主角翅膀暗一点"——这个"暗一点"是**即时的视觉反馈**（临时黯淡），让玩家感受到"天使在消耗"。但如果每次介入都永久降低翅膀亮度，翅膀状态会变得不可预测（取决于玩家触发了多少次介入），且可能导致Phase 2中段翅膀就已经全暗。用"阶段基线+临时黯淡"的模型，既保留了"每次介入都有代价"的感受，又确保了翅膀进度的可控性。
+- *为什么这样设计*：概念文档说"每次拉回主角翅膀暗一点"——这个"暗一点"包含两层含义：**即时的视觉反馈**（临时黯淡，让玩家感受到"天使在消耗"）和**长期的累积代价**（永久扣减，让翅膀在阶段内渐进黯淡）。双层模型统一了 C2 的阶段基线结构和 C5 的连续扣减过程：阶段基线作为永久层的初始值，C5 的连续扣减在初始值上累减。这既保留了"每次介入都有代价"的感受，又确保了翅膀进度跟随叙事弧线的可控性。
 
 #### 2.4.4 翅膀阶段数据与美术资产映射
 
@@ -246,9 +253,12 @@ define angel_state = {
     "emotional_state": "calm",       # "calm" | "aching" | "resolute" | "sorrowful" | "tender"
     
     # === 翅膀进化 ===
-    "wing_stage": 1,                 # 1-5，阶段基线（由章节入口设置）
-    "wing_temporary_dim": 0.0,       # 0.0-0.3，临时黯淡值（介入后增加，场景结束后衰减回0）
-    "wing_brightness": 1.0,          # 计算值：stage_baseline[wing_stage] - wing_temporary_dim
+    "wing_stage": 1,                          # 1-5，阶段基线（由章节入口设置）
+    # 【架构对齐回写】ADR-004 双层模型
+    "wing_brightness_permanent": 1.0,         # 永久亮度：阶段基线初始化，C5代价永久扣减，阶段切换重置
+    "wing_brightness_temporary": 0.0,         # 临时暗淡：高强度暗流即时效果，场景结束恢复
+    # wing_brightness_displayed = max(动态下限, permanent - temporary)  ← 计算属性，不存储
+    # 动态下限 = max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[stage] × 0.15)
     
     # === 互动限制 ===
     "click_cooldown_until": 0.0,     # 下次可点击的时间戳
@@ -272,9 +282,13 @@ define angel_state = {
 
 ```python
 # wing_stage_baseline — 每个翅膀阶段的基线亮度
-# wing_brightness = wing_stage_baseline[wing_stage] - wing_temporary_dim
+# 【架构对齐回写】ADR-004 双层模型：基线作为 wing_brightness_permanent 的初始值
+# wing_brightness_displayed = max(动态下限, wing_brightness_permanent - wing_brightness_temporary)
+# 动态下限 = max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[stage] × 0.15)
 
-define wing_stage_baseline = {
+define WING_BRIGHTNESS_MIN = 0.05  # 绝对硬底线
+
+define WING_STAGE_BASELINE = {
     1: 1.00,    # 全辉 — 满亮度
     2: 0.85,    # 初颤 — 轻微降低，仍明亮
     3: 0.65,    # 可见黯淡 — 明显变暗
@@ -520,22 +534,31 @@ define chapter_to_wing_stage = {
   - 天使立绘移动到心爱的身边（presence_mode = "approach"）
   - 播放拥抱动画（根据当前wing_stage选择对应姿态）
   - 从angel_intervention_lines中选取对应暗流类型+强度的台词
-  - 增加wing_temporary_dim（临时黯淡值）
+  - 增加wing临时黯淡（高强度暗流时，C5调用apply_wing_cost(cost, is_temporary=True)）
+  - 扣减wing永久亮度（每次介入，C5调用apply_wing_cost(cost, is_temporary=False)）
   - 设置angel_state.emotional_state（通常为resolute或tender）
   - 返回后由C5调用A3暗流视觉系统解除视觉效果
 ```
 
 ```
-接口名称：apply_wing_dim(amount)
+接口名称：apply_wing_cost(cost, is_temporary)
 调用方：C5存在保护系统
-被调方：C2天使陪伴系统
+被调方：C5自身（翅膀亮度所有者），C2通过C5接口读取显示值
 触发时机：天使介入后
-输入：amount（临时黯淡量，0.0-0.3）
+输入：cost（代价量），is_temporary（是否为临时暗淡）
 输出：无
 副作用：
-  - angel_state.wing_temporary_dim += amount
-  - 触发翅膀亮度更新的视觉表现
-  - 注意：wing_temporary_dim在当前场景结束后自动衰减回0.0
+  - 【架构对齐回写】ADR-004 双层模型
+  - 若 is_temporary=False（永久扣减，默认）：
+    - wing_brightness_permanent -= cost
+    - wing_brightness_permanent = max(动态下限, wing_brightness_permanent)
+    - 动态下限 = max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[wing_stage] × 0.15)
+  - 若 is_temporary=True（临时暗淡，高强度暗流即时效果）：
+    - wing_brightness_temporary += cost
+    - wing_brightness_temporary = min(wing_brightness_permanent - WING_BRIGHTNESS_MIN, wing_brightness_temporary)
+  - 触发翅膀亮度更新的视觉表现（wing_brightness_displayed = max(动态下限, permanent - temporary)）
+  - 注意：wing_brightness_temporary 在当前场景结束后由 C1 调用 C5.recover_temporary_dim() 恢复为 0.0
+  - 注意：阶段切换时由 C2.update_wing_stage() 重置 permanent 为新阶段基线，temporary 清零
 ```
 
 ---
@@ -685,7 +708,7 @@ Ch 16 所有结局通用的最后一句话：
 >
 > 本GDD定义了天使陪伴系统的完整设计规格。关键决策记录：
 > 1. 翅膀进化：3阶段叙事弧线 × 5阶段视觉实现的映射关系已明确
-> 2. 翅膀黯淡机制：阶段基线（章节驱动）+ 临时黯淡（介入驱动），确保可控且有情感重量
+> 2. 【架构对齐回写】翅膀黯淡机制：ADR-004 双层模型（永久层 permanent + 临时层 temporary），阶段基线作为永久层初始值，C5 代价在永久层扣减，临时层场景结束恢复。显示亮度 = max(动态下限, permanent - temporary)，动态下限 = max(0.05, 阶段基线×0.15)
 > 3. 拥抱限制：Phase 1-2每质点3次（让拥抱有重量），Phase 3无限（在最需要时不拒绝）
 > 4. 天使永不批评、永不离开、永不让玩家感到是负担
 >
@@ -693,3 +716,39 @@ Ch 16 所有结局通用的最后一句话：
 > - 与art-director确认5阶段翅膀资产的制作排期
 > - 与code-architect确认angel_state的持久化方案和接口实现
 > - 与narrative-writer确认天使对话池的文本编写优先级（Phase 1优先）
+
+---
+
+## 架构对齐记录
+
+> **回写日期**：2025-07-30
+> **回写人**：文策渊（design-strategist）
+> **对齐依据**：`docs/architecture/adr/ADR-004-wing-brightness-model.md`、`docs/architecture/main-architecture.md` §6
+
+### 回写内容
+
+本次回写将 C2 天使陪伴系统 GDD 的翅膀亮度模型从**单变量阶段基线模型**更新为 **ADR-004 双层模型**，以解决 Phase 4 审查中发现的 CONCERN 1（C2 与 C5 翅膀亮度模型冲突）。
+
+#### 修改的章节
+
+| 章节 | 修改内容 |
+|------|---------|
+| §2.4.3 阶段转换规则 | 将"阶段基线+临时黯淡"单层描述更新为"永久层+临时层"双层模型描述，新增动态下限公式 |
+| §4.1 天使状态数据 | `wing_brightness`（单计算值）+ `wing_temporary_dim`（单临时值）→ `wing_brightness_permanent` + `wing_brightness_temporary` + `wing_brightness_displayed`（计算属性） |
+| §4.2 翅膀阶段基线表 | 注释更新为双层模型说明，新增 `WING_BRIGHTNESS_MIN` 绝对下限常量 |
+| §6.3 存在保护系统接口 | `apply_wing_dim(amount)` → `apply_wing_cost(cost, is_temporary)`，更新为双层扣减逻辑 |
+
+#### 核心变更
+
+1. **变量结构**：`wing_brightness`（单值）→ `wing_brightness_permanent`（永久层）+ `wing_brightness_temporary`（临时层）
+2. **显示亮度**：从 `stage_baseline[wing_stage] - wing_temporary_dim` → `max(动态下限, permanent - temporary)`
+3. **代价扣减**：C5 代价从仅影响临时层 → 扣减到永久层（永久代价，阶段内累积）
+4. **下限策略**：从隐式阶段基线下限 → 动态下限 `max(0.05, WING_STAGE_BASELINE[stage] × 0.15)`
+5. **所有权**：C5 ProtectionSystem 是翅膀亮度（permanent + temporary）的唯一所有者，C2 通过 C5 接口操作
+
+#### 未修改的部分
+
+- 五阶段翅膀定义（§2.4.2）保持不变——视觉阶段映射与亮度范围不变
+- 章节到翅膀阶段的映射（§4.2 `chapter_to_wing_stage`）保持不变
+- 天使互动机制（§2.3）保持不变
+- 所有叙事内容保持不变

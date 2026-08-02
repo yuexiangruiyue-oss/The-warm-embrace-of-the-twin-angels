@@ -58,14 +58,18 @@
 
 ### 2.2 选择不设正确答案
 
-**机制**：每个选择节点的每个选项都有一个`progress_value`（进度值）和`texture_tag`（纹理标签）。
+**机制**：每个选择节点的每个选项都有一个 `progress_value`（进度值）、`texture_tag`（纹理标签）和 `confrontation_tag`（直面标签）。
 
-- `progress_value`：该选项推进质点进程的程度。所有选项的`progress_value`都>0——没有任何选项"不推进"。
+- `progress_value`：该选项推进质点进程的程度。所有选项的`progress_value`都≥0——没有任何选项"不推进"。
   - "勇敢"选择（直面痛苦）：`progress_value = 1.0`
   - "温和"选择（缓慢面对）：`progress_value = 0.7`
   - "逃避"选择（暂时回避）：`progress_value = 0.3`（但第三次逃避后天使代为面对，补齐到1.0）
 - `texture_tag`：该选项赋予路径的"纹理"——影响天使的回应方式、对话内容、后续叙事的微调。
   - 如`"brave_direct"`（勇敢直接）、`"gentle_patient"`（温和耐心）、`"avoidant"`（回避）、`"dependent_on_angel"`（依赖天使）等。
+- **【架构对齐回写】`confrontation_tag`**：直面标签，标记该选项在情感面对中的角色。取值为 `ENGAGE`（直面）/ `ESCAPE`（逃避）/ `NEUTRAL`（中性）/ `null`（非直面选择，如纯关系/态度选择）。
+  - `confrontation_tag` 与 `progress_value` 的关系：`ENGAGE → 1.0`、`ESCAPE → 0.3`、`NEUTRAL → 0.0`。当 `confrontation_tag` 为 null 时，`progress_value` 由 `texture_tag` 独立决定。
+  - `confrontation_tag` 被 C4 质点进程系统消费（驱动完成判定和逃避计数）；`progress_value` 被 C4 消费（进度更新）。两者存在语义冗余但有意保留——`confrontation_tag` 驱动 C4 逻辑，`progress_value` 作为通用进度值。
+  - 参考：`docs/architecture/main-architecture.md` §5.3 统一选项数据结构
 
 **关键规则**：`progress_value`的差异不意味着"勇敢更好"——`progress_value = 0.7`的温和选择同样能完成质点，只是需要更长的叙事节拍。纹理的不同让每次游玩都有独特的情感体验。
 
@@ -195,7 +199,10 @@
             "id": "ch04_c02_o01",              # 选项ID
             "text": "'你不是错的'",              # 选项显示文本
             "texture_tag": "brave_affirm",     # 纹理标签
-            "progress_value": 1.0,             # 进度值 (0.0-1.0)
+            # 【架构对齐回写】confrontation_tag 与 bond_depth_delta（ADR/主架构 §5.3）
+            "confrontation_tag": "ENGAGE",     # 直面标签：ENGAGE/ESCAPE/NEUTRAL/null
+            "progress_value": 1.0,             # 进度值 (0.0-1.0)，ENGAGE→1.0
+            "bond_depth_delta": 0.03,          # 羁绊深度变化值
             "emotional_weight": 0.8,           # 情感权重 (0.0-1.0)
             "angel_reaction": "aching",        # 天使的即时情感反应
             "angel_response_delta": {          # 对angel_response_profile的影响
@@ -215,7 +222,9 @@
             "id": "ch04_c02_o02",
             "text": "'错的是否定你的人'",
             "texture_tag": "angry_redirect",
+            "confrontation_tag": "ESCAPE",     # 【架构对齐回写】直面标签
             "progress_value": 0.9,
+            "bond_depth_delta": 0.0,           # 【架构对齐回写】羁绊深度变化
             "emotional_weight": 0.7,
             "angel_reaction": "resolute",
             "angel_response_delta": {
@@ -235,7 +244,9 @@
             "id": "ch04_c02_o03",
             "text": "'我也是这样过来的'",
             "texture_tag": "vulnerable_share",
+            "confrontation_tag": "ENGAGE",     # 【架构对齐回写】直面标签
             "progress_value": 1.0,
+            "bond_depth_delta": 0.05,          # 【架构对齐回写】羁绊深度变化
             "emotional_weight": 0.9,
             "angel_reaction": "sorrowful",
             "angel_response_delta": {
@@ -495,14 +506,19 @@ def calculate_nihilism_risk(choice_history, option):
 ### 6.2 与质点进程系统（C4）的接口
 
 ```
-接口名称：add_sephirot_progress(sephirot_id, progress_value)
+接口名称：add_sephirot_progress(sephirot_id, progress_value, confrontation_tag)
 调用方：C3选择系统
 被调方：C4质点进程系统
 触发时机：玩家做出选择后
-输入：sephirot_id（质点ID）、progress_value（进度值0.0-1.0）
+输入：sephirot_id（质点ID）、progress_value（进度值0.0-1.0）、confrontation_tag（直面标签ENGAGE/ESCAPE/NEUTRAL/null）
 输出：sephirot_completed（bool，质点是否已完成）
 副作用：
-  - C4将progress_value累加到该质点的进度
+  - 【架构对齐回写】confrontation_tag 被 C4 消费（驱动完成判定和逃避计数）；progress_value 被 C4 消费（进度更新）
+  - C4根据 confrontation_tag 判定：
+    - ENGAGE → progress +1.0 → COMPLETED_FULL → 解锁下一质点
+    - ESCAPE → progress +0.3 → 逃避计数+1 → 第3次ESCAPE → 天使代为面对 → COMPLETED_HALF
+    - NEUTRAL → progress +0.0 → 天使提供视角 → 重新选择
+    - null（非直面选择）→ 仅累加 progress_value，不影响逃避计数
   - 如果进度达到1.0，C4点亮质点并通知C1叙事引擎进入下一章
   - 如果进度未达1.0，C4通知C1继续当前质点的叙事（循环或推进）
 ```
@@ -655,13 +671,48 @@ Ch 16 最终选择
 > 本GDD定义了选择系统的完整设计规格。关键决策记录：
 > 1. "情感共振选择"模型——无正确答案，选择改变纹理而非通关路径
 > 2. 三种选择类型（行动/态度/关系）有明确的情感维度区分和章节分布
-> 3. 选择后果延迟呈现——以天使的记忆引用和回应变化为主要反馈
-> 4. 存在保护只过滤虚无主义倾向，不过滤普通的消极/逃避选择
-> 5. 最终选择不受保护，觉醒结局需要bond_depth >= 0.6
-> 6. 选择系统绝不惩罚玩家——所有选择都是"有效的"
+> 3. 【架构对齐回写】选项数据结构新增 confrontation_tag（ENGAGE/ESCAPE/NEUTRAL/null）和 bond_depth_delta 字段，与 C4 质点进程系统对齐
+> 4. 选择后果延迟呈现——以天使的记忆引用和回应变化为主要反馈
+> 5. 存在保护只过滤虚无主义倾向，不过滤普通的消极/逃避选择
+> 6. 最终选择不受保护，觉醒结局需要bond_depth >= 0.6
+> 7. 选择系统绝不惩罚玩家——所有选择都是"有效的"
 >
 > 待协调项：
 > - 与narrative-writer确认35-40个选择节点的完整文本编写
 > - 与code-architect确认choice_node数据结构的Ren'Py实现方案
 > - 与C5存在保护系统GDD对齐：虚无主义风险评估的阈值和计算方式需一致
 > - 与C4质点进程系统GDD对齐：progress_value的累加逻辑和质点完成判定需一致
+
+---
+
+## 架构对齐记录
+
+> **回写日期**：2025-07-30
+> **回写人**：文策渊（design-strategist）
+> **对齐依据**：`docs/architecture/main-architecture.md` §5.3 统一选项数据结构
+
+### 回写内容
+
+本次回写将 C3 选择系统 GDD 的选项数据结构与主架构文档 §5.3 对齐，新增 `confrontation_tag` 和 `bond_depth_delta` 字段，以解决 Phase 4 审查中发现的 CONCERN 2（C3 与 C4 选项数据结构不一致）。
+
+#### 修改的章节
+
+| 章节 | 修改内容 |
+|------|---------|
+| §2.2 选择不设正确答案 | 新增 `confrontation_tag` 字段说明及其与 `progress_value` 的映射关系（ENGAGE→1.0, ESCAPE→0.3, NEUTRAL→0.0） |
+| §4.1 选择节点数据结构 | 三个选项示例均新增 `confrontation_tag` 和 `bond_depth_delta` 字段 |
+| §6.2 与质点进程系统接口 | `add_sephirot_progress` 接口新增 `confrontation_tag` 参数，明确 C4 消费逻辑 |
+
+#### 核心变更
+
+1. **新增字段 `confrontation_tag`**：枚举值 `ENGAGE`/`ESCAPE`/`NEUTRAL`/`null`，被 C4 质点进程系统消费，驱动完成判定和逃避计数
+2. **新增字段 `bond_depth_delta`**：浮点数，表示选择对羁绊深度的影响，被 C2 天使陪伴系统消费
+3. **明确消费关系**：`confrontation_tag` → C4（完成判定）；`progress_value` → C4（进度更新）；`bond_depth_delta` → C2（羁绊更新）
+4. **冗余设计确认**：`confrontation_tag` 与 `progress_value` 存在语义重叠（ENGAGE→1.0），但有意保留——`confrontation_tag` 驱动 C4 逻辑，`progress_value` 作为通用进度值，非直面选择时两者解耦
+
+#### 未修改的部分
+
+- 三种选择类型定义（§2.1）保持不变
+- 天使回应映射（§2.3）保持不变
+- 存在保护过滤规则（§4.4）保持不变
+- 所有叙事内容保持不变

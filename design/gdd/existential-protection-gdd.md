@@ -516,10 +516,18 @@
 4. 恢复画面
    gradual_visual_recovery(undertow_code)  # 暗流视觉效果逐渐消退
 
-5. 计算翅膀代价
+5. 计算翅膀代价（【架构对齐回写】ADR-004 双层模型）
    cost = calculate_wing_cost(undertow_code, intensity, intervention_type)
-   wing_brightness -= cost
-   wing_brightness = max(0.05, wing_brightness)  # 最低保留5%亮度
+   # 永久扣减
+   wing_brightness_permanent -= cost
+   floor = WING_STAGE_BASELINE[wing_stage] × 0.15
+   wing_brightness_permanent = max(max(0.05, floor), wing_brightness_permanent)
+   # 临时暗淡（仅高强度暗流）
+   if intensity >= 7:
+       temp_cost = cost × 0.5
+       wing_brightness_temporary += temp_cost
+       wing_brightness_temporary = min(wing_brightness_permanent - 0.05, wing_brightness_temporary)
+   # 显示亮度 = max(动态下限, permanent - temporary)
    angel_intervention_count += 1
 
 6. 更新天使情感状态
@@ -552,8 +560,35 @@ t=3-5s: "余震"阶段——画面有极轻微的暗流痕迹（如5%的灰色�
 
 #### 2.3.1 代价公式
 
+**【架构对齐回写】ADR-004 双层模型**
+
+翅膀代价扣减到 `wing_brightness_permanent`（永久层），而非单独的亮度变量。显示亮度为计算属性：
+
 ```
-wing_cost = BASE_COST × PHASE_MULTIPLIER × INTENSITY_MULTIPLIER × UNDERTOW_MULTIPLIER
+wing_brightness_displayed = max(动态下限, wing_brightness_permanent - wing_brightness_temporary)
+动态下限 = max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[wing_stage] × 0.15)
+```
+
+代价公式：
+
+```
+cost = BASE_COST × PHASE_MULTIPLIER × INTENSITY_MULTIPLIER × UNDERTOW_MULTIPLIER
+
+# 永久扣减（默认，每次介入）
+wing_brightness_permanent -= cost
+floor = WING_STAGE_BASELINE[wing_stage] × 0.15
+wing_brightness_permanent = max(floor, wing_brightness_permanent)
+
+# 临时暗淡（仅高强度暗流 intensity >= 7）
+if intensity >= 7:
+    temp_cost = cost × 0.5  # 临时暗淡为永久代价的 50%
+    wing_brightness_temporary += temp_cost
+    wing_brightness_temporary = min(wing_brightness_permanent - WING_BRIGHTNESS_MIN, wing_brightness_temporary)
+```
+
+**动态下限确保翅膀不会完全消失**：下限不是固定 0.05，而是 `max(0.05, WING_STAGE_BASELINE[stage] × 0.15)`。绝对下限 0.05 作为硬底线仍生效。
+
+**Phase 1 代价乘数 0.0（免费保护）**：Phase 1 中 PHASE_MULTIPLIER = 0.0，意味着天使介入不产生任何翅膀代价——天使是"礼物"，消耗不可见。
 
 BASE_COST = 0.02  (每次介入的基础代价)
 
@@ -583,10 +618,10 @@ UNDERTOW_MULTIPLIER (每种暗流的翅膀代价倍率):
 #### 2.3.2 代价累积示例
 
 ```
-示例: 一个典型玩家的翅膀亮度变化
+示例: 一个典型玩家的翅膀亮度变化（【架构对齐回写】permanent 层轨迹）
 
 Phase 1 (Ch 1-3):
-    3次介入 × cost=0 → wing_brightness = 1.0 (不变)
+    3次介入 × cost=0 → wing_brightness_permanent = 1.0 (不变)
 
 Phase 2a (Ch 4-8):
     Ch 4: SHAME_LOOP 中强度 → cost = 0.02 × 1.0 × 1.0 × 1.0 = 0.020
@@ -595,7 +630,7 @@ Phase 2a (Ch 4-8):
     Ch 7: RAGE_INC 中强度 → cost = 0.02 × 1.0 × 1.0 × 1.0 = 0.020
     Ch 8: HARM_GUIDE 高强度 → cost = 0.02 × 1.0 × 1.5 × 2.0 = 0.060
     Phase 2a累计: 0.150
-    wing_brightness = 1.0 - 0.150 = 0.850
+    wing_brightness_permanent = 1.0 - 0.150 = 0.850
 
 Phase 2b (Ch 9-13):
     Ch 9: 复合(SHAME+EXIST) 中高 → cost ≈ 0.02 × 1.5 × 1.2 × 1.1 = 0.040 (×2暗流)
@@ -604,21 +639,23 @@ Phase 2b (Ch 9-13):
     Ch 12: 复合(NIHIL+POSS) 高 → cost ≈ 0.02 × 1.5 × 1.5 × 1.25 = 0.056 (×2暗流)
     Ch 13: 全部8种轮番，天使把力量给了心爱的 → 特殊事件: -0.150
     Phase 2b累计: 0.341
-    wing_brightness = 0.850 - 0.341 = 0.509
+    wing_brightness_permanent = 0.850 - 0.341 = 0.509
 
 Phase 3 (Ch 14-15):
     Ch 14: 全部8种同时爆发(峰值) → 大量介入 → cost ≈ 0.300
-    wing_brightness = 0.509 - 0.300 = 0.209
+    wing_brightness_permanent = 0.509 - 0.300 = 0.209
     Ch 15: 天使不再"拉回"，站在身边 → 介入代价极低 → cost ≈ 0.050
-    wing_brightness = 0.209 - 0.050 = 0.159
+    wing_brightness_permanent = 0.209 - 0.050 = 0.159
 
 Ch 16:
-    叙事驱动重置: wing_brightness = 1.0 (天使恢复最美)
+    叙事驱动重置: wing_brightness_permanent = 1.0 (天使恢复最美)
 ```
 
 #### 2.3.3 翅膀亮度与视觉阶段映射
 
-`wing_brightness` 连续值映射到美术圣经的5个翅膀进化阶段：
+**【架构对齐回写】ADR-004 双层模型**
+
+`wing_brightness_displayed` 连续值（= max(动态下限, permanent - temporary)）映射到美术圣经的5个翅膀进化阶段：
 
 | wing_brightness | 视觉阶段 | 翅膀表现 | 出现时间 |
 |----------------|---------|---------|---------|
@@ -888,7 +925,12 @@ default undertow_state = {
     "active_undertows": [],          # 当前活跃的暗流列表
     # [{"code": "SHAME_LOOP", "intensity": 5, "start_time": ..., "duration": 30, "visual_state": "..."}]
     
-    "wing_brightness": 1.0,          # 翅膀亮度 (0.05 - 1.0)
+    # 【架构对齐回写】ADR-004 双层模型
+    "wing_brightness_permanent": 1.0,  # 永久亮度：阶段基线初始化，代价永久扣减，阶段切换重置
+    "wing_brightness_temporary": 0.0,  # 临时暗淡：高强度暗流即时效果，场景结束恢复
+    # wing_brightness_displayed = max(动态下限, permanent - temporary)  ← 计算属性
+    # 动态下限 = max(WING_BRIGHTNESS_MIN, WING_STAGE_BASELINE[wing_stage] × 0.15)
+    
     "angel_intervention_count": 0,   # 天使介入总次数
     "intervention_log": [],          # 介入记录
     # [{"chapter": 4, "undertow": "SHAME_LOOP", "intensity": 5, "cost": 0.020, "angel_lines_used": [...]}]
@@ -1017,7 +1059,21 @@ init python:
 
             # 计算翅膀代价
             cost = self.calculate_wing_cost(code, intensity, intervention_type)
-            self.state["wing_brightness"] = max(0.05, self.state["wing_brightness"] - cost)
+            # 【架构对齐回写】ADR-004 双层模型：扣减到 wing_brightness_permanent
+            floor = self.wing_stage_baseline[self.wing_stage] * 0.15
+            self.state["wing_brightness_permanent"] -= cost
+            self.state["wing_brightness_permanent"] = max(
+                max(0.05, floor),
+                self.state["wing_brightness_permanent"]
+            )
+            # 临时暗淡（仅高强度暗流）
+            if intensity >= 7:
+                temp_cost = cost * 0.5
+                self.state["wing_brightness_temporary"] += temp_cost
+                self.state["wing_brightness_temporary"] = min(
+                    self.state["wing_brightness_permanent"] - 0.05,
+                    self.state["wing_brightness_temporary"]
+                )
             self.state["angel_intervention_count"] += 1
 
             # 记录介入
@@ -1137,8 +1193,12 @@ init python:
             # 画面恢复
             self.recover_visual("NIHILISM", "high")
 
-            # 翅膀代价 (极高)
-            self.state["wing_brightness"] = max(0.05, self.state["wing_brightness"] - 0.15)
+            # 翅膀代价 (极高) — 【架构对齐回写】扣减到 permanent 层
+            floor = self.wing_stage_baseline[self.wing_stage] * 0.15
+            self.state["wing_brightness_permanent"] = max(
+                max(0.05, floor),
+                self.state["wing_brightness_permanent"] - 0.15
+            )
 
             # 记录
             self.state["intervention_log"].append({
@@ -1150,12 +1210,28 @@ init python:
             })
 
         def get_wing_brightness(self):
-            """返回当前翅膀亮度 (供天使陪伴系统读取)"""
-            return self.state["wing_brightness"]
+            """返回当前翅膀显示亮度 (供天使陪伴系统读取)
+            【架构对齐回写】ADR-004 双层模型：displayed = max(动态下限, permanent - temporary)
+            """
+            floor = self.wing_stage_baseline[self.wing_stage] * 0.15
+            displayed = self.state["wing_brightness_permanent"] - self.state["wing_brightness_temporary"]
+            return max(max(0.05, floor), displayed)
+
+        def get_wing_brightness_permanent(self):
+            """返回永久层翅膀亮度"""
+            return self.state["wing_brightness_permanent"]
+
+        def get_wing_brightness_temporary(self):
+            """返回临时层翅膀暗淡值"""
+            return self.state["wing_brightness_temporary"]
+
+        def recover_temporary_dim(self):
+            """场景结束时恢复临时暗淡（C1 调用）"""
+            self.state["wing_brightness_temporary"] = 0.0
 
         def get_wing_stage(self):
             """返回翅膀视觉阶段 (1-5)"""
-            brightness = self.state["wing_brightness"]
+            brightness = self.get_wing_brightness()  # 【架构对齐回写】使用显示亮度
             if brightness >= 0.8:
                 return 1
             elif brightness >= 0.6:
@@ -1171,8 +1247,9 @@ init python:
             """Ch 16: 关闭存在保护（心爱的已不需要保护）"""
             self.state["active_undertows"] = []
             self.state["afterimage_undertows"] = []
-            # 翅膀恢复 (叙事驱动)
-            self.state["wing_brightness"] = 1.0
+            # 【架构对齐回写】ADR-004 双层模型：叙事重置 permanent 层
+            self.state["wing_brightness_permanent"] = 1.0
+            self.state["wing_brightness_temporary"] = 0.0
 
         def clear_afterimages_for_new_chapter(self):
             """新章节开始时清除余震"""
@@ -1642,7 +1719,48 @@ HARM_GUIDE（自我伤害指导）是最敏感的暗流类型，需要额外的�
 > 待对齐项：
 > 1. 8种暗流×3级=24种视觉状态的具体实现方案（与美术对齐）
 > 2. 翅膀5阶段视觉与wing_brightness映射的确认（与美术对齐）
-> 3. wing_brightness与天使陪伴系统GDD的集成（与design-strategist对齐）
+> 3. 【架构对齐回写】wing_brightness 已通过 ADR-004 双层模型与 C2 GDD 对齐（permanent + temporary）
 > 4. 暗流触发与质点进程系统GDD的集成（本GDD的姊妹文档，已完成）
 > 5. 选择系统的existence_protection_filtered字段与虚无主义检测的集成（与design-strategist对齐）
 > 6. Ch 8（HARM_GUIDE章节）的内容预警和章节跳过的具体实现（与UX设计对齐）
+
+---
+
+## 架构对齐记录
+
+> **回写日期**：2025-07-30
+> **回写人**：文策渊（design-strategist）
+> **对齐依据**：`docs/architecture/adr/ADR-004-wing-brightness-model.md`、`docs/architecture/main-architecture.md` §6
+
+### 回写内容
+
+本次回写将 C5 存在保护机制 GDD 的翅膀亮度模型从**单变量连续扣减模型**更新为 **ADR-004 双层模型**，以解决 Phase 4 审查中发现的 CONCERN 1（C2 与 C5 翅膀亮度模型冲突）。
+
+#### 修改的章节
+
+| 章节 | 修改内容 |
+|------|---------|
+| §2.2.2 介入流程 步骤5 | `wing_brightness -= cost; max(0.05, ...)` → 双层模型扣减逻辑（永久层扣减 + 高强度临时暗淡） |
+| §2.3.1 代价公式 | 新增双层模型说明，代价扣减到 `wing_brightness_permanent`，新增动态下限公式，确认 Phase 1 乘数 0.0 |
+| §2.3.2 代价累积示例 | 变量名从 `wing_brightness` 更新为 `wing_brightness_permanent` |
+| §2.3.3 翅膀阶段映射 | 注明使用 `wing_brightness_displayed`（计算属性）进行阶段映射 |
+| §4.2 暗流状态数据 | `wing_brightness`（单变量）→ `wing_brightness_permanent` + `wing_brightness_temporary` |
+| §4.3 触发规则引擎 | `trigger_angel_intervention`、`trigger_nihilism_forced_intervention`、`get_wing_brightness`、`get_wing_stage`、`disable_for_final_chapter` 均更新为双层模型逻辑；新增 `get_wing_brightness_permanent`、`get_wing_brightness_temporary`、`recover_temporary_dim` 方法 |
+
+#### 核心变更
+
+1. **变量结构**：`wing_brightness`（单值）→ `wing_brightness_permanent`（永久层）+ `wing_brightness_temporary`（临时层）
+2. **代价扣减**：从 `wing_brightness -= cost; max(0.05, ...)` → 扣减到 `wing_brightness_permanent`，动态下限 `max(0.05, WING_STAGE_BASELINE[stage] × 0.15)`
+3. **临时暗淡**：高强度暗流（≥7）额外施加临时暗淡到 `wing_brightness_temporary`，场景结束恢复
+4. **显示亮度**：`wing_brightness_displayed = max(动态下限, permanent - temporary)`
+5. **所有权**：C5 ProtectionSystem 是翅膀亮度（permanent + temporary）的唯一所有者
+6. **Phase 1 确认**：PHASE_MULTIPLIER = 0.0，天使介入免费（天使是"礼物"）
+7. **Ch16 重置**：`wing_brightness_permanent = 1.0`，`wing_brightness_temporary = 0.0`
+
+#### 未修改的部分
+
+- 8种暗流定义（§2.1）保持不变——触发条件、视觉表现、天使台词完全不变
+- 代价倍率（UNDERTOW_MULTIPLIER）保持不变
+- Phase 乘数表保持不变（Phase 1: 0.0, Phase 2a: 1.0, Phase 2b: 1.5, Phase 3: 2.5）
+- 虚无主义强制阻断机制（§2.4）保持不变
+- 所有叙事内容保持不变
