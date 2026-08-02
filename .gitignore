@@ -1,0 +1,40 @@
+# WorkBuddy internal
+.workbuddy/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv
+
+# Ren'Py build
+build/
+dist/
+*.rpyc
+*.rpymc
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Secrets - NEVER commit tokens or credentials
+*.env
+.env
+credentials*
+*token*
+
+# Temporary
+*.tmp
+*.bak
+*.log
