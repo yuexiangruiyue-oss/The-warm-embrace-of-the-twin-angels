@@ -14,8 +14,10 @@ env/
 # Ren'Py build
 build/
 dist/
+saves/
 *.rpyc
 *.rpymc
+game/log/
 
 # OS
 .DS_Store
