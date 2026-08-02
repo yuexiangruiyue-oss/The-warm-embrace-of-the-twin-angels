@@ -1,44 +1,51 @@
-# Ren'Py Engine Version Reference
+# Ren'Py 版本参考
 
-> **项目**：The Embrace of the Twin Angels
->
-> **引擎**：Ren'Py 8.3.x
->
-> **确认日期**：2026-08-02
->
-> **确认人**：岳祥瑞（项目主理人）
+## 项目钉定版本
 
----
+**Ren'Py 8.3.x**（最新稳定版 8.3.7）
 
-## 版本钉定
+## 关键 API 参考
 
-**Ren'Py 8.3.x（最新稳定版）**
+### 存档系统
+- `renpy.save(slot)` — 保存到指定槽位
+- `renpy.load(slot)` — 从指定槽位读取
+- `renpy.unlink_save(slot)` — 删除存档
+- `renpy.slot_json(slot)` — 获取槽位 JSON 元数据
+- `renpy.slot_time(slot)` — 获取槽位时间戳
+- `renpy.slot_screenshot(slot)` — 获取槽位截图
 
-- 下载地址：https://www.renpy.org/latest.html
-- 文档地址：https://www.renpy.org/doc/html/
-- SDK 目录：`renpy-8.3.x-sdk/`
+### 叙事控制
+- `renpy.pause(duration)` — 暂停指定时间
+- `renpy.jump(label)` — 跳转到指定 label
+- `renpy.call(label)` — 调用指定 label（带返回）
 
-## 选择理由
+### 变量声明
+- `default var_name = value` — 声明存档级变量
+- `define var_name = value` — 声明常量
+- `persistent.var_name` — 跨周目持久变量
 
-参见 `docs/architecture/adr/ADR-001-engine-selection.md`
+### Screen 语言
+- `screen name():` — 定义 Screen
+- `textbutton` — 文本按钮
+- `bar value` — 滑动条
+- `frame` / `vbox` / `hbox` — 布局容器
 
-## 关键特性依赖
+### 图像处理
+- `im.MatrixColor` — 图像颜色矩阵变换
+- `Transform` — 图像变换
+- `Solid(color)` — 纯色图像
+- `image name = path` — 图像定义
 
-本项目依赖的 Ren'Py 8.3.x 关键特性：
+## 已知限制
 
-| 特性 | 用途 | 文档参考 |
-|------|------|---------|
-| Screen Language | 14类屏幕UI实现 | main-architecture.md §3 |
-| ATL (Animation and Transformation Language) | 翅膀渐变、暗流视觉、天使介入动画 | phase2-visual-alignment.md |
-| im.MatrixColor / matrixcolor | 暗流饱和度/色相滤镜 | asset-specs.md §1 |
-| Persistent variables | 跨周目状态（结局解锁、CG图鉴） | main-architecture.md §4 |
-| Save/Load system | 6组件状态序列化 | main-architecture.md §4.5 |
-| Self-voicing | 可访问性 C-A04 | accessibility-matrix.md |
-| Layered images | 角色表情差分叠加 | asset-specs.md §2 |
-| JSON data loading | 数据驱动叙事（ADR-002） | main-architecture.md §5 |
+1. `im.MatrixColor` 在高频调用时可能影响性能（需 playtest 验证）
+2. Python `@dataclass` 的 pickle 序列化需要测试兼容性
+3. Ren'Py 的 `self-voicing` 功能需要真实屏幕阅读器测试
 
-## 版本更新策略
+## 版本兼容性
 
-- 开发期间钉定 8.3.x，不跨大版本升级
-- 如遇 bug fix 小版本更新，经测试后可升级
-- 发布前确认最终版本号
+| 版本 | 策略 |
+|------|------|
+| 0.1.x | 基线版本，无兼容性处理 |
+| 0.x.x | 新增 `default` 变量自动提供默认值 |
+| 1.0.x | 存档迁移脚本（如需要） |
