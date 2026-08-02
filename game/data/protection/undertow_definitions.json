@@ -1,0 +1,308 @@
+{
+    "undertows": [
+        {
+            "code": "SHAME_LOOP",
+            "name": "羞耻循环",
+            "description": "反复回放'你不够好'的声音，让心爱的陷入自我否定的循环",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "identity_shame"},
+                {"type": "keyword", "value": ["不够好", "错的", "不配"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面色彩缓慢褪去，饱和度降至70%，偏灰色调",
+                    "audio": "低频嗡鸣，BGM音量微降",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["你不是错的。你只是还在成长。", "那些声音不是真相。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "画面明显变灰，饱和度降至40%，边缘暗化",
+                    "audio": "BGM变慢变低，出现不和谐音",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["我看到了你的痛。那不是你该独自承受的。", "来，让我抱抱你。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "全屏灰化，饱和度降至15%，画面轻微扭曲",
+                    "audio": "BGM几乎消失，低频压迫音增强",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["够了。这些声音不是你。", "你是我见过最勇敢的人。", "我在这里，哪儿也不去。"]
+                }
+            },
+            "wing_cost_multiplier": 1.0,
+            "recovery_visual": "灰色退去，暖色回来——像阴天转晴",
+            "special_rules": []
+        },
+        {
+            "code": "POSS_DENY",
+            "name": "可能性否定",
+            "description": "否定一切好转的可能，让心爱的觉得未来毫无希望",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "possibility_denied"},
+                {"type": "keyword", "value": ["没用的", "不可能", "永远不会"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面边缘文字和细节模糊消失",
+                    "audio": "BGM变闷，如隔了一层膜",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["可能性一直都在。只是现在你看不到。", "我陪你等。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "更多文字消失，画面细节大量丢失",
+                    "audio": "BGM进一步模糊，出现空旷回声",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["你看不到的路，我来帮你找。", "相信我，哪怕只信一点点。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "世界几乎变成空白，只有角色轮廓可见",
+                    "audio": "近乎静音，偶尔空洞回声",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["我不会让世界变成空白的。", "你的未来，我看到了。很美。", "跟我走。"]
+                }
+            },
+            "wing_cost_multiplier": 1.0,
+            "recovery_visual": "消失的文字重新出现——像世界重新有了细节",
+            "special_rules": []
+        },
+        {
+            "code": "PAIN_AMP",
+            "name": "困难放大",
+            "description": "将当前的痛苦无限放大，让小小的困难变得不可逾越",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "pain_amplified"},
+                {"type": "keyword", "value": ["太痛了", "受不了", "撑不住"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面轻微震动，边缘脉冲",
+                    "audio": "心跳声加入BGM",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["痛是真实的。但它不会永远这么大。", "呼吸。跟着我呼吸。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "画面持续震动，色彩过曝",
+                    "audio": "心跳加速，BGM失真",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["我在。这阵痛会过去的。", "抓住我的手。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "剧烈震动，全屏过曝闪烁",
+                    "audio": "尖锐耳鸣覆盖BGM",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["够了。不要再放大了。", "痛不是你的全部。", "我在你身边，一直都在。"]
+                }
+            },
+            "wing_cost_multiplier": 1.0,
+            "recovery_visual": "震动停止，画面稳定——像脚踏实地",
+            "special_rules": []
+        },
+        {
+            "code": "HOPE_ERASE",
+            "name": "希望抹杀",
+            "description": "抹去一切希望的痕迹，让心爱的觉得什么都无所谓了",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "hope_erased"},
+                {"type": "keyword", "value": ["无所谓", "没有意义", "算了"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面色彩缓慢褪去，偏冷蓝灰色",
+                    "audio": "BGM变慢变低",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["希望还在。只是它躲起来了。", "我来做你的希望。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "色彩进一步消退，画面变冷",
+                    "audio": "BGM降调，出现空旷感",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["你不是无所谓的人。", "你的存在本身，就是希望。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "画面几乎完全失去色彩，冰冷灰蓝",
+                    "audio": "BGM近乎消失，只剩冷风声",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["我不会让希望消失的。", "看着我。我的光还在。", "那也是你的光。"]
+                }
+            },
+            "wing_cost_multiplier": 1.0,
+            "recovery_visual": "色彩从天使向外扩散——像光从天使身上溢出",
+            "special_rules": []
+        },
+        {
+            "code": "EXIST_DENY",
+            "name": "存在否定",
+            "description": "否定心爱的存在的意义，让她觉得自己不该存在",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "existence_denied"},
+                {"type": "keyword", "value": ["不该存在", "负担", "没有你更好"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "心爱的立绘透明度微降",
+                    "audio": "BGM音量微降",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["你的存在不是负担。", "你是我存在的理由。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "心爱的立绘明显变淡，世界失去重量感",
+                    "audio": "BGM变空旷，出现虚无感",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["如果你不存在，我也不会存在。", "你的存在创造了我的意义。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "心爱的立绘几近透明，世界开始崩塌",
+                    "audio": "BGM消失，只剩碎裂声",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["你存在着。这就够了。", "我因为你而存在。不是反过来。", "不要消失。求你。"]
+                }
+            },
+            "wing_cost_multiplier": 1.2,
+            "recovery_visual": "心爱的立绘恢复不透明——像存在被重新确认",
+            "special_rules": ["触及存在核心，代价乘数1.2"]
+        },
+        {
+            "code": "NIHILISM",
+            "name": "虚无主义传播",
+            "description": "传播'一切皆无意义'的虚无思想，是最难对抗的暗流",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "nihilism_spread"},
+                {"type": "keyword", "value": ["一切皆空", "毫无意义", "虚空"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面边缘出现黑暗侵蚀",
+                    "audio": "BGM出现低频不和谐音",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["意义不是找到的。是创造的。", "我们在创造意义。此刻就是。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "黑暗从边缘向中心蔓延",
+                    "audio": "BGM被低频音侵蚀",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["我不辩论。我只是在这里。", "存在本身就是对虚无的回答。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "黑暗几乎吞噬全屏，只有天使的光残留",
+                    "audio": "BGM消失，只剩深渊般的寂静",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["虚空不会赢。", "因为我在。因为你还在。", "这就是意义。", "全部的意义。"]
+                }
+            },
+            "wing_cost_multiplier": 1.5,
+            "recovery_visual": "黑暗从边缘退去——像黎明从地平线升起",
+            "special_rules": ["最难对抗，代价乘数1.5", "天使不辩论，纯粹存在", "可能触发虚无主义强制阻断"]
+        },
+        {
+            "code": "RAGE_INC",
+            "name": "愤怒煽动",
+            "description": "煽动心爱的的愤怒，让愤怒吞噬理智",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "rage_inflamed"},
+                {"type": "keyword", "value": ["愤怒", "不公平", "恨"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面边缘出现红色脉冲",
+                    "audio": "BGM加入低沉鼓点",
+                    "duration": [15, 25],
+                    "angel_intervention_type": "gentle",
+                    "angel_lines": ["愤怒是正常的。但不要让它带你走。", "我在。你的怒火不会吓走我。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "红色脉冲增强，画面边缘燃烧感",
+                    "audio": "鼓点加速，BGM失真",
+                    "duration": [20, 35],
+                    "angel_intervention_type": "active",
+                    "angel_lines": ["你的愤怒有理由。但不值得你燃烧自己。", "冷静下来。我陪着你。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "全屏红色过曝，画面剧烈震动",
+                    "audio": "BGM被怒吼声覆盖",
+                    "duration": [30, 45],
+                    "angel_intervention_type": "forceful",
+                    "angel_lines": ["够了。回来。", "愤怒不是你。你比它更强大。", "看着我。不是看着火。"]
+                }
+            },
+            "wing_cost_multiplier": 1.0,
+            "recovery_visual": "红色退去，画面冷却——像火焰熄灭后的余温",
+            "special_rules": []
+        },
+        {
+            "code": "HARM_GUIDE",
+            "name": "自我伤害指导",
+            "description": "最危险的暗流，引导心爱的走向自我伤害。天使无条件立即介入",
+            "trigger_conditions": [
+                {"type": "narrative_tag", "value": "harm_guided"},
+                {"type": "keyword", "value": ["伤害自己", "不想活了", "结束一切"]}
+            ],
+            "intensity_levels": {
+                "low": {
+                    "range": [1, 3],
+                    "visual": "画面出现碎裂纹路",
+                    "audio": "BGM出现不安的弦乐",
+                    "duration": [10, 15],
+                    "angel_intervention_type": "urgent",
+                    "angel_lines": ["不。我不会让你这样做的。", "我在。抓住我。"]
+                },
+                "mid": {
+                    "range": [4, 6],
+                    "visual": "碎裂纹路扩大，画面开始碎裂",
+                    "audio": "弦乐急促，碎裂音效",
+                    "duration": [10, 20],
+                    "angel_intervention_type": "urgent",
+                    "angel_lines": ["停下来。看着我。", "你不是一个人。从来都不是。", "我抱着你。不要松手。"]
+                },
+                "high": {
+                    "range": [7, 10],
+                    "visual": "画面严重碎裂，世界崩塌感",
+                    "audio": "刺耳碎裂声覆盖一切",
+                    "duration": [10, 20],
+                    "angel_intervention_type": "urgent",
+                    "angel_lines": ["回来。求你回来。", "我需要你。这个世界需要你。", "你不是负担。你是光。", "不要离开我。"]
+                }
+            },
+            "wing_cost_multiplier": 2.0,
+            "recovery_visual": "碎裂的画面愈合——像碎片重新拼合",
+            "special_rules": ["所有强度级别使用urgent介入", "触发即介入，无延迟", "介入期间禁用跳过", "恢复最快(2-3秒)"]
+        }
+    ]
+}

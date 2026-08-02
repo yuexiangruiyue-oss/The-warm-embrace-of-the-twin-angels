@@ -1,0 +1,8 @@
+{
+    "angel_id": "template_angel",
+    "name": "模板天使",
+    "emotional_states": ["calm", "aching", "resolute", "sorrowful", "tender"],
+    "presence_states": ["PRESENT", "CONCEALED", "INTERVENING", "ABSENT", "ETERNAL"],
+    "wing_stages": 5,
+    "default_dialogue_pool": "default"
+}

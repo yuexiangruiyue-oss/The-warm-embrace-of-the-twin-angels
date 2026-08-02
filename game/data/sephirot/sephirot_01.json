@@ -1,0 +1,13 @@
+{
+    "sephirot_id": 1,
+    "name": "王国",
+    "pinyin": "wangguo",
+    "chapter": 1,
+    "phase": "FORGETTING",
+    "primary_undertow": "EXIST_DENY",
+    "composite_undertows": [],
+    "base_intensity": 2,
+    "intervention_type": "gentle",
+    "wing_cost": 0.0,
+    "special_rules": ["Phase 1 no cost"]
+}

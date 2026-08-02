@@ -1,0 +1,11 @@
+{
+    "ending_code": "TEMPLATE",
+    "name": "模板结局",
+    "description": "模板描述",
+    "conditions": {
+        "bond_depth_min": 0.0,
+        "chapters_completed": 16,
+        "required_tags": []
+    },
+    "epilogue_text": "（结局后日谈文本）"
+}

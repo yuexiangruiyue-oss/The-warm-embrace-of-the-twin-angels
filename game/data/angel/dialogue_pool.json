@@ -1,0 +1,84 @@
+{
+    "dialogue_entries": [
+        {
+            "id": "dlg_001",
+            "phase": "FORGETTING",
+            "emotional_state": "calm",
+            "completion_type": "none",
+            "text": "我在这里。你不用害怕。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_002",
+            "phase": "FORGETTING",
+            "emotional_state": "calm",
+            "completion_type": "none",
+            "text": "慢慢来。不着急。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_003",
+            "phase": "FORGETTING",
+            "emotional_state": "calm",
+            "completion_type": "full",
+            "text": "你做得很好。我在你身边。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_004",
+            "phase": "FORGETTING",
+            "emotional_state": "calm",
+            "completion_type": "half",
+            "text": "没关系。下一次，你会更有力量的。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_005",
+            "phase": "FORGETTING",
+            "emotional_state": "tender",
+            "completion_type": "none",
+            "text": "你的存在不是负担。你是我存在的理由。",
+            "context_tags": ["existence_denied"]
+        },
+        {
+            "id": "dlg_006",
+            "phase": "FORGETTING",
+            "emotional_state": "tender",
+            "completion_type": "none",
+            "text": "这片废墟不是你的错。但你可以选择——留在这里，还是往前走。",
+            "context_tags": ["choice_prompt"]
+        },
+        {
+            "id": "dlg_007",
+            "phase": "TRIAL_EARLY",
+            "emotional_state": "aching",
+            "completion_type": "none",
+            "text": "我看到了你的痛。那不是你该独自承受的。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_008",
+            "phase": "TRIAL_EARLY",
+            "emotional_state": "aching",
+            "completion_type": "full",
+            "text": "你真的很勇敢。每一次直面，都让我更加心疼，也更加骄傲。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_009",
+            "phase": "TRIAL_LATE",
+            "emotional_state": "resolute",
+            "completion_type": "none",
+            "text": "我不会让你倒下的。即使翅膀几近透明，我依然在这里。",
+            "context_tags": []
+        },
+        {
+            "id": "dlg_010",
+            "phase": "TRUTH",
+            "emotional_state": "tender",
+            "completion_type": "none",
+            "text": "走吧。我准备好了。",
+            "context_tags": ["final_chapter"]
+        }
+    ]
+}

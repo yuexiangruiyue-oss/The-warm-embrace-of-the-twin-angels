@@ -1,0 +1,13 @@
+{
+    "sephirot_id": 0,
+    "name": "模板",
+    "pinyin": "template",
+    "chapter": 0,
+    "phase": "FORGETTING",
+    "primary_undertow": "SHAME_LOOP",
+    "composite_undertows": [],
+    "base_intensity": 1,
+    "intervention_type": "gentle",
+    "wing_cost": 0.0,
+    "special_rules": []
+}

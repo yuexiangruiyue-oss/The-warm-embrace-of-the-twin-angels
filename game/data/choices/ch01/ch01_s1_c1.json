@@ -1,0 +1,39 @@
+{
+    "choice_id": "ch01_s1_c1",
+    "sephirot_id": 1,
+    "prompt_text": "天使握住了心爱的手。这片废墟不是你的错。但你可以选择——",
+    "options": [
+        {
+            "option_id": "engage_01",
+            "text": "「我要往前走。即使不知道前方有什么。」",
+            "confrontation_tag": "ENGAGE",
+            "progress_value": 1.0,
+            "texture_tag": "courage",
+            "angel_response_delta": {
+                "warmth": 0.05,
+                "depth": 0.03,
+                "protectiveness": 0.0,
+                "vulnerability": 0.0
+            },
+            "bond_depth_delta": 0.03,
+            "narrative_jump": null,
+            "existence_protection_filtered": false
+        },
+        {
+            "option_id": "escape_01",
+            "text": "「……我想留在这里。外面太可怕了。」",
+            "confrontation_tag": "ESCAPE",
+            "progress_value": 0.3,
+            "texture_tag": "avoidance",
+            "angel_response_delta": {
+                "warmth": 0.02,
+                "depth": 0.0,
+                "protectiveness": 0.05,
+                "vulnerability": 0.0
+            },
+            "bond_depth_delta": 0.0,
+            "narrative_jump": null,
+            "existence_protection_filtered": false
+        }
+    ]
+}

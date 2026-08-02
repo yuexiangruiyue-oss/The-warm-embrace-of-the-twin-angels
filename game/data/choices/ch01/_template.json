@@ -1,0 +1,39 @@
+{
+    "choice_id": "template_ch01_c1",
+    "sephirot_id": 1,
+    "prompt_text": "（选择提示文本）",
+    "options": [
+        {
+            "option_id": "opt_a",
+            "text": "（选项 A 文本）",
+            "confrontation_tag": "ENGAGE",
+            "progress_value": 1.0,
+            "texture_tag": "courage",
+            "angel_response_delta": {
+                "warmth": 0.0,
+                "depth": 0.0,
+                "protectiveness": 0.0,
+                "vulnerability": 0.0
+            },
+            "bond_depth_delta": 0.0,
+            "narrative_jump": null,
+            "existence_protection_filtered": false
+        },
+        {
+            "option_id": "opt_b",
+            "text": "（选项 B 文本）",
+            "confrontation_tag": "ESCAPE",
+            "progress_value": 0.3,
+            "texture_tag": "avoidance",
+            "angel_response_delta": {
+                "warmth": 0.0,
+                "depth": 0.0,
+                "protectiveness": 0.0,
+                "vulnerability": 0.0
+            },
+            "bond_depth_delta": 0.0,
+            "narrative_jump": null,
+            "existence_protection_filtered": false
+        }
+    ]
+}
